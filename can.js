@@ -41,13 +41,15 @@ Can = {
         return string.charAt(0).toUpperCase() + string.slice(1);
     },
 
-    registerCollection: function(name, collection, usersKeyName, rolePermissionsKeyName) {
+    registerCollection: function(name, collection, authorizationMethod, usersKeyName, rolePermissionsKeyName) {
         this.collections[name] = {
             collection: collection,
+            authorizationMethod: authorizationMethod,
             usersKeyName: usersKeyName || 'users',
             ownerKeyName: usersKeyName || 'userId',
             rolePermissionsKeyName: rolePermissionsKeyName || 'rolePermissions',
-            roles: {}
+            roles: {},
+            permissions: false
         };
     },
     
@@ -99,8 +101,8 @@ Can = {
         }
     },
     
-    createRole: function(role, permissions) {
-        this.roles[role] = permissions;
+    createPermissionsIn: function(permissions, forType) {
+        this.collections[forType].permissions = permissions;
     },
 
     createRoleIn: function(role, permissions, forType) {
@@ -268,6 +270,15 @@ Can = {
             userId = Meteor.userId();
         }
 
+        if (this.collections[checkInType].authorizationMethod === 'role') {
+            return this._doInRole(checkPermission, checkType, checkId, checkInType, checkInId, userId);
+        } else {
+            return this._doInPermission(checkPermission, checkType, checkId, checkInType, checkInId, userId);
+        }
+
+    },
+
+    _doInRole: function (checkPermission, checkType, checkId, checkInType, checkInId, userId) {
         var document = this._getDocument(checkInType, checkInId);
 
         if (document && document[this.collections[checkInType].usersKeyName]) {
@@ -310,6 +321,18 @@ Can = {
             }
         } else {
             if (this.debug) console.log("coniel_can debug:", "No " + checkInType + " permissions defined for user with id: " + userId + ". Assuming permission is denied.");
+            return false;
+        }
+    },
+
+    _doInPermission: function (checkPermission, checkType, checkId, checkInType, checkInId, userId) {
+        var permissions = this.collections[checkInType].permissions;
+
+        if (permissions) {
+            var checkTypePermission = permissions[checkType];
+            return this._verifyPermissionIn(checkType, checkId, checkInType, checkInId, checkTypePermission, checkPermission, userId);
+        } else {
+            if (this.debug) console.log("coniel_can debug:", 'No permissions defined for ' + checkInType + ". Assuming permission is denied.");
             return false;
         }
     },
