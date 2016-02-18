@@ -136,27 +136,35 @@ Can = {
     },
 
     _verifyPermissionIn: function (checkType, checkId, checkInType, checkInId, permissionSubjectValue, permissionAction, userId) {
-        if (typeof permissionSubjectValue === 'boolean' || typeof permissionSubjectValue === 'string') {
+        if (typeof permissionSubjectValue === 'object') {
+            var permission = permissionSubjectValue[permissionAction];
+
+            if (typeof permission !== 'undefined') {
+                if (this.debug) console.log("coniel_can debug: Permission is " + permission + " for " + permissionAction + " " + checkType + " in " + checkInType + ": " + checkInId);
+                if (typeof permission !== 'function') {
+                    if (permission === 'own') {
+                        return this._checkIfOwn(checkType, checkId, userId);
+                    } else {
+                        return permission;
+                    }
+                } else {
+                    if (this.debug) console.log("coniel_can debug: Permission is " + permission(checkId, checkInType, checkInId) + " (resolved) for " + permissionAction + " " + checkType + " in " + checkInType + ": " + checkInId);
+                    return permission(checkId, checkInType, checkInId);
+                }
+            } else {
+                if (this.debug) console.log("coniel_can debug:", 'Could not find "' + permissionAction + '" permission for ' + checkType + ' for user with _id: "' + userId + '" in this ' + checkInType + ". Assuming permission is denied.");
+                return false;
+            }
+        } else if (typeof permissionSubjectValue === 'boolean' || typeof permissionSubjectValue === 'string') {
             if (this.debug) console.log("coniel_can debug: Permission is " + permissionSubjectValue + " for " + permissionAction + " " + checkType + " in " + checkInType + ": " + checkInId);
             if (permissionSubjectValue === 'own') {
                 return this._checkIfOwn(checkType, checkId, userId);
             } else {
                 return permissionSubjectValue;
             }
-        } else {
-            var permission = permissionSubjectValue[permissionAction];
-
-            if (typeof permission !== 'undefined') {
-                if (this.debug) console.log("coniel_can debug: Permission is " + permission + " for " + permissionAction + " " + checkType + " in " + checkInType + ": " + checkInId);
-                if (permission === 'own') {
-                    return this._checkIfOwn(checkType, checkId, userId);
-                } else {
-                    return permission;
-                }
-            } else {
-                if (this.debug) console.log("coniel_can debug:", 'Could not find "' + permissionAction + '" permission for ' + checkType + ' for user with _id: "' + userId + '" in this ' + checkInType + ". Assuming permission is denied.");
-                return false;
-            }
+        } else if (typeof permissionSubjectValue === 'function') {
+            if (this.debug) console.log("coniel_can debug: Permission is " + permissionSubjectValue(checkId, checkInType, checkInId) + " (resolved) for " + permissionAction + " " + checkType + " in " + checkInType + ": " + checkInId);
+            return permissionSubjectValue(checkId, checkInType, checkInId);
         }
     },
 
@@ -270,6 +278,8 @@ Can = {
             userId = Meteor.userId();
         }
 
+        console.log("do in");
+
         if (this.collections[checkInType].authorizationMethod === 'role') {
             return this._doInRole(checkPermission, checkType, checkId, checkInType, checkInId, userId);
         } else {
@@ -279,6 +289,7 @@ Can = {
     },
 
     _doInRole: function (checkPermission, checkType, checkId, checkInType, checkInId, userId) {
+        console.log("do in role");
         var document = this._getDocument(checkInType, checkInId);
 
         if (document && document[this.collections[checkInType].usersKeyName]) {
@@ -326,9 +337,11 @@ Can = {
     },
 
     _doInPermission: function (checkPermission, checkType, checkId, checkInType, checkInId, userId) {
+        console.log("do in permission");
         var permissions = this.collections[checkInType].permissions;
 
         if (permissions) {
+            console.log("has perms");
             var checkTypePermission = permissions[checkType];
             return this._verifyPermissionIn(checkType, checkId, checkInType, checkInId, checkTypePermission, checkPermission, userId);
         } else {
