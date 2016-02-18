@@ -134,7 +134,6 @@ Can = {
     },
 
     _verifyPermissionIn: function (checkType, checkId, checkInType, checkInId, permissionSubjectValue, permissionAction, userId) {
-        console.log(permissionSubjectValue);
         if (typeof permissionSubjectValue === 'boolean' || typeof permissionSubjectValue === 'string') {
             if (this.debug) console.log("coniel_can debug: Permission is " + permissionSubjectValue + " for " + permissionAction + " " + checkType + " in " + checkInType + ": " + checkInId);
             if (permissionSubjectValue === 'own') {
@@ -182,14 +181,11 @@ Can = {
 
         // Get the document to which we want to add the role
         var document = this._getDocument(inType, inId);
-        console.log(document);
 
         // Check if the user's permissions object has an array for this inType
         if (!document[this.collections[inType].usersKeyName]) {
             document[this.collections[inType].usersKeyName] = [];
         }
-
-        console.log(document);
 
         var newPermissions = {
             userId: userId,
@@ -206,7 +202,6 @@ Can = {
 
         var updateDoc = {};
         updateDoc[this.collections[inType].usersKeyName] = document[this.collections[inType].usersKeyName];
-        console.log(updateDoc);
         this.collections[inType].collection.update({_id: document._id}, { $set: updateDoc }, function(error, result) {
             if (error) console.log(error);
         });
