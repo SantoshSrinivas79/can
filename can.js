@@ -278,8 +278,6 @@ Can = {
             userId = Meteor.userId();
         }
 
-        console.log("do in");
-
         if (this.collections[checkInType].authorizationMethod === 'role') {
             return this._doInRole(checkPermission, checkType, checkId, checkInType, checkInId, userId);
         } else {
@@ -289,7 +287,6 @@ Can = {
     },
 
     _doInRole: function (checkPermission, checkType, checkId, checkInType, checkInId, userId) {
-        console.log("do in role");
         var document = this._getDocument(checkInType, checkInId);
 
         if (document && document[this.collections[checkInType].usersKeyName]) {
@@ -337,11 +334,9 @@ Can = {
     },
 
     _doInPermission: function (checkPermission, checkType, checkId, checkInType, checkInId, userId) {
-        console.log("do in permission");
         var permissions = this.collections[checkInType].permissions;
 
         if (permissions) {
-            console.log("has perms");
             var checkTypePermission = permissions[checkType];
             return this._verifyPermissionIn(checkType, checkId, checkInType, checkInId, checkTypePermission, checkPermission, userId);
         } else {
