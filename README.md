@@ -240,7 +240,7 @@ Meteor.methods({
         }
     },
     setUserPermission: (permission, value, userId, groupId) => {
-        if (Can.hasRoleIn("admin", "groud, groupId)) {
+        if (Can.hasRoleIn("admin", "group", groupId)) {
             Can.setPermissionForUserIn(permission, value, userId, "group", groupId);
         }
     }
@@ -284,6 +284,7 @@ Permission values:
     - `<String>` or `<Object>` checkIdOrObject - the document id or the document itself that the action is being performed on (the type will depend on if you passed in the id or the document when calling the authorization method)
     - `<String>` checkInType - the itemName of the collection being checked in
     - `<String>` or `<Object> checkInIdOrObject - the document id or the document itself that the action is being validated in (the type will depend on if you passed in the id or the document when calling the authorization method)
+
 
 ### Collection level general
 ```javascript
