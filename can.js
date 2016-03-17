@@ -1,24 +1,13 @@
 Can = {
     debug: true,
+    userRoleKey: 'role',
     customPermissionTypes: [],
 
     permissionTypes: [
         "create",
-        "insert",
-        "add",
-
-        "read",
-        "access",
         "view",
-        "find",
-
-        "update",
         "edit",
-        "modify",
-
-        "delete",
-        "remove",
-        "destroy"
+        "delete"
     ],
 
     roles: {},
@@ -46,13 +35,13 @@ Can = {
         return string.charAt(0).toUpperCase() + string.slice(1);
     },
 
-    registerCollection: function(name, collection, authorizationMethod, usersKeyName, rolePermissionsKeyName) {
+    registerCollection: function(name, collection, options) {
         this.collections[name] = {
             collection: collection,
-            authorizationMethod: authorizationMethod,
-            usersKeyName: usersKeyName || 'users',
-            ownerKeyName: usersKeyName || 'userId',
-            rolePermissionsKeyName: rolePermissionsKeyName || 'rolePermissions',
+            authorizationLevel: options.authorizationLevel,
+            usersKeyName: options.usersKeyName || 'users',
+            ownerKeyName: options.usersKeyName || 'userId',
+            rolePermissionsKeyName: options.rolePermissionsKeyName || 'permissions',
             roles: {},
             permissions: false
         };
@@ -112,6 +101,10 @@ Can = {
 
     createRoleIn: function(role, permissions, forType) {
         this.collections[forType].roles[role] = permissions;
+    },
+
+    createRole: function(role, permissions, forType) {
+        this.roles[role] = permissions;
     },
 
     _getDocument: function (inType, inId) {
@@ -277,6 +270,16 @@ Can = {
             checkId = document._id;
         }
 
+        if (document) {
+            var permission = this.collections[checkType][checkPermission];
+
+            if (!permission) { // No general permission found
+                if (Meteor.user() && Meteor.user[this.userRoleKey]) {
+                    permission = this.collections[checkType]
+                }
+            }
+        }
+
         if (document && document[this.collections[checkType].usersKeyName]) {
             var permissionsForUser = _.findWhere(document[this.collections[checkType].usersKeyName], {id: checkId});
             if (permissionsForUser) {
@@ -302,7 +305,7 @@ Can = {
             userId = Meteor.userId();
         }
 
-        if (this.collections[checkInType].authorizationMethod === 'role') {
+        if (this.collections[checkInType].authorizationLevel === 'document') {
             return this._doInRole(checkPermission, checkType, checkId, checkInType, checkInId, userId);
         } else {
             return this._doInPermission(checkPermission, checkType, checkId, checkInType, checkInId, userId);
